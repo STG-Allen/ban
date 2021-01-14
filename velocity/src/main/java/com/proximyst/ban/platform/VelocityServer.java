@@ -19,12 +19,12 @@
 package com.proximyst.ban.platform;
 
 import com.google.common.collect.Iterators;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.proximyst.ban.model.BanUser;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.util.Objects;
 import java.util.UUID;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import org.checkerframework.checker.index.qual.NonNegative;

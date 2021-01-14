@@ -19,11 +19,11 @@
 package com.proximyst.ban.factory;
 
 import com.google.inject.assistedinject.Assisted;
-import com.google.inject.name.Named;
 import com.proximyst.ban.config.MessageKey;
 import com.proximyst.ban.message.IMessage;
 import com.proximyst.ban.message.IMessageComponent;
 import java.util.concurrent.CompletableFuture;
+import javax.inject.Named;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 

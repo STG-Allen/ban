@@ -42,7 +42,7 @@ public final class PlaceholderMessage implements IMessage {
   private final @NonNull BanExceptionalFutureLogger<?> banExceptionalFutureLogger;
 
   @AssistedInject
-  public PlaceholderMessage(final @Assisted @NonNull MessageKey messageKey,
+  PlaceholderMessage(final @Assisted @NonNull MessageKey messageKey,
       final @NonNull MessagesConfig messagesConfig,
       final @Assisted @NonNull IMessageComponent @NonNull [] messageComponents,
       final @NonNull IBanExceptionalFutureLoggerFactory banExceptionalFutureLoggerFactory) {

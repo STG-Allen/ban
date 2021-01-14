@@ -20,7 +20,6 @@ package com.proximyst.ban.commands;
 
 import cloud.commandframework.CommandManager;
 import cloud.commandframework.context.CommandContext;
-import com.google.inject.Inject;
 import com.proximyst.ban.BanPermissions;
 import com.proximyst.ban.commands.cloud.BaseCommand;
 import com.proximyst.ban.factory.IBanExceptionalFutureLoggerFactory;
@@ -31,6 +30,7 @@ import com.proximyst.ban.platform.IBanAudience;
 import com.proximyst.ban.service.IPunishmentService;
 import com.proximyst.ban.service.MessageService;
 import com.proximyst.ban.utils.BanExceptionalFutureLogger;
+import javax.inject.Inject;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 public final class UnbanCommand extends BaseCommand {

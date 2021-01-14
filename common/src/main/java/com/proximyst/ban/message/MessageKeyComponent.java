@@ -18,11 +18,11 @@
 
 package com.proximyst.ban.message;
 
-import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.proximyst.ban.config.MessageKey;
 import com.proximyst.ban.config.MessagesConfig;
 import java.util.concurrent.CompletableFuture;
+import javax.inject.Inject;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 public final class MessageKeyComponent implements IMessageComponent {
@@ -31,7 +31,7 @@ public final class MessageKeyComponent implements IMessageComponent {
   private final @NonNull MessagesConfig messagesConfig;
 
   @Inject
-  public MessageKeyComponent(final @Assisted @NonNull String name,
+  MessageKeyComponent(final @Assisted @NonNull String name,
       final @Assisted @NonNull MessageKey messageKey,
       final @NonNull MessagesConfig messagesConfig) {
     this.name = name;

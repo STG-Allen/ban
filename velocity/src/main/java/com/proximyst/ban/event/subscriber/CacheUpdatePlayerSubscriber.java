@@ -18,7 +18,6 @@
 
 package com.proximyst.ban.event.subscriber;
 
-import com.google.inject.Inject;
 import com.proximyst.ban.factory.IBanExceptionalFutureLoggerFactory;
 import com.proximyst.ban.platform.VelocityAudience;
 import com.proximyst.ban.service.IPunishmentService;
@@ -28,6 +27,7 @@ import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.LoginEvent;
+import javax.inject.Inject;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class CacheUpdatePlayerSubscriber {

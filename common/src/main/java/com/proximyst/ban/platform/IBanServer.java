@@ -18,6 +18,7 @@
 
 package com.proximyst.ban.platform;
 
+import com.proximyst.ban.platform.IBanAudience.IBanPlayer;
 import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -52,7 +53,7 @@ public interface IBanServer extends Audience {
    * @param uuid The UUID to get an audience of.
    * @return The audience of the user, if online.
    */
-  @Nullable IBanAudience audienceOf(final @NonNull UUID uuid);
+  @Nullable IBanPlayer audienceOf(final @NonNull UUID uuid);
 
   /**
    * Gets a cached or creates a new {@link IBanAudience} for the given user by their username, if they are online.
@@ -60,7 +61,7 @@ public interface IBanServer extends Audience {
    * @param username The username to get an audience of.
    * @return The audience of the user, if online.
    */
-  @Nullable IBanAudience audienceOf(final @NonNull String username);
+  @Nullable IBanPlayer audienceOf(final @NonNull String username);
 
   /**
    * @return Whether the server currently only accepts valid paying users of the game.

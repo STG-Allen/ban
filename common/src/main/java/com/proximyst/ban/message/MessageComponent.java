@@ -42,14 +42,14 @@ public final class MessageComponent implements IMessageComponent {
   }
 
   @AssistedInject
-  public MessageComponent(final @Assisted("name") @NonNull String name,
+  MessageComponent(final @Assisted("name") @NonNull String name,
       final @Assisted("value") @Nullable String value,
       final @NonNull IBanExceptionalFutureLoggerFactory banExceptionalFutureLoggerFactory) {
     this(name, (Object) value, banExceptionalFutureLoggerFactory);
   }
 
   @AssistedInject
-  public MessageComponent(final @Assisted @NonNull String name,
+  MessageComponent(final @Assisted @NonNull String name,
       final @Assisted @NonNull CompletableFuture<@Nullable String> value,
       final @NonNull IBanExceptionalFutureLoggerFactory banExceptionalFutureLoggerFactory) {
     this(name, (Object) value, banExceptionalFutureLoggerFactory);

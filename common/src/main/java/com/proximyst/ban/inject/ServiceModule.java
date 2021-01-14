@@ -20,7 +20,6 @@ package com.proximyst.ban.inject;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.proximyst.ban.service.IDataService;
 import com.proximyst.ban.service.IMojangService;
 import com.proximyst.ban.service.IPunishmentService;
@@ -29,6 +28,7 @@ import com.proximyst.ban.service.impl.ImplAshconMojangService;
 import com.proximyst.ban.service.impl.ImplGenericSqlDataService;
 import com.proximyst.ban.service.impl.ImplPunishmentService;
 import com.proximyst.ban.service.impl.ImplUserService;
+import javax.inject.Singleton;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 public final class ServiceModule extends AbstractModule {

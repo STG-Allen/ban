@@ -18,10 +18,10 @@
 
 package com.proximyst.ban.service.impl;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.proximyst.ban.inject.annotation.BanAsyncExecutor;
-import com.proximyst.ban.model.BanUser;
+import com.proximyst.ban.model.BanIdentity;
+import com.proximyst.ban.model.BanIdentity.ConsoleIdentity;
+import com.proximyst.ban.model.BanIdentity.UuidIdentity;
 import com.proximyst.ban.service.IDataService;
 import com.proximyst.ban.service.IMojangService;
 import com.proximyst.ban.service.IUserService;
@@ -31,55 +31,47 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 @Singleton
 public final class ImplUserService implements IUserService {
   private final @NonNull IMojangService mojangService;
   private final @NonNull IDataService dataService;
   private final @NonNull Executor executor;
+  private final @NonNull ConsoleIdentity banConsole;
 
   @Inject
   ImplUserService(final @NonNull IMojangService mojangService,
       final @NonNull IDataService dataService,
-      final @NonNull @BanAsyncExecutor Executor executor) {
+      final @NonNull @BanAsyncExecutor Executor executor,
+      final @NonNull ConsoleIdentity banConsole) {
     this.mojangService = mojangService;
     this.dataService = dataService;
     this.executor = executor;
+    this.banConsole = banConsole;
   }
 
   @Override
-  public @NonNull CompletableFuture<@NonNull Optional<@NonNull BanUser>> getUser(final @NonNull UUID uuid) {
-    if (uuid.equals(BanUser.CONSOLE.getUuid())) {
-      // The UUID is the special value of the console.
-      // This UUID is version 0, and can therefore never be used in a Minecraft context.
-      return CompletableFuture.completedFuture(Optional.of(BanUser.CONSOLE));
-    }
-
+  public @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUser(final @NonNull UUID uuid) {
     if (uuid.version() != 4) {
-      // We can't fetch data about offline mode UUIDs.
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
-    return this.getUserInternal(() -> this.dataService.getUser(uuid),
+    return this.getUserInternal(() -> this.dataService.getUser(uuid).flatMap(BanIdentity::asUuidIdentity),
         () -> this.mojangService.getUser(uuid));
   }
 
   @Override
-  public @NonNull CompletableFuture<@NonNull Optional<@NonNull BanUser>> getUser(final @NonNull String name) {
-    return this.getUserInternal(() -> this.dataService.getUser(name),
+  public @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUser(final @NonNull String name) {
+    return this.getUserInternal(() -> this.dataService.getUser(name).flatMap(BanIdentity::asUuidIdentity),
         () -> this.mojangService.getUser(name));
   }
 
   @Override
-  public @NonNull CompletableFuture<@NonNull Optional<@NonNull BanUser>> getUserUpdated(final @NonNull UUID uuid) {
-    return this.mojangService.getUser(uuid)
-        .thenApply(mojangUser -> {
-          mojangUser.ifPresent(banUser -> this.executor.execute(() -> this.dataService.saveUser(banUser)));
-
-          return mojangUser;
-        });
+  public @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUserUpdated(final @NonNull UUID uuid) {
+    return this.mojangService.getUser(uuid);
   }
 
   @Override
@@ -98,16 +90,14 @@ public final class ImplUserService implements IUserService {
   }
 
   @Override
-  public @NonNull CompletableFuture<@Nullable Void> saveUser(final @NonNull BanUser user) {
-    return CompletableFuture.supplyAsync(() -> {
-      this.dataService.saveUser(user);
-      return null;
-    }, this.executor);
+  public @NonNull CompletableFuture<@NonNull UuidIdentity> saveUser(final @NonNull UUID uuid,
+      final @NonNull String username) {
+    return CompletableFuture.supplyAsync(() -> this.dataService.createIdentity(uuid, username), this.executor);
   }
 
-  private @NonNull CompletableFuture<@NonNull Optional<@NonNull BanUser>> getUserInternal(
-      final @NonNull Supplier<@NonNull Optional<@NonNull BanUser>> banUserSupplier,
-      final @NonNull Supplier<@NonNull CompletableFuture<@NonNull Optional<@NonNull BanUser>>> mojangUserSupplier) {
+  private @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUserInternal(
+      final @NonNull Supplier<@NonNull Optional<@NonNull UuidIdentity>> banUserSupplier,
+      final @NonNull Supplier<@NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>>> mojangUserSupplier) {
     return CompletableFuture
         .supplyAsync(banUserSupplier, this.executor)
         .thenCompose(opt -> {
@@ -117,7 +107,9 @@ public final class ImplUserService implements IUserService {
 
           return mojangUserSupplier.get()
               .thenApply(mojangUser -> {
-                mojangUser.ifPresent(banUser -> this.executor.execute(() -> this.dataService.saveUser(banUser)));
+                mojangUser.ifPresent(ident ->
+                    this.executor.execute(() ->
+                        this.dataService.createIdentity(ident.uuid(), ident.username())));
 
                 return mojangUser;
               });

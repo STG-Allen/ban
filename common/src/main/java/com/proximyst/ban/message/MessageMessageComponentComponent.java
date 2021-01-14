@@ -29,7 +29,7 @@ public final class MessageMessageComponentComponent implements IMessageComponent
   private final @NonNull CompletableFuture<@NonNull IMessageComponent @NonNull []> messageComponents;
 
   @AssistedInject
-  public MessageMessageComponentComponent(
+  MessageMessageComponentComponent(
       final @Assisted @NonNull CompletableFuture<@NonNull IMessageComponent @NonNull []> messageComponents,
       final @NonNull IBanExceptionalFutureLoggerFactory banExceptionalFutureLoggerFactory) {
     this.messageComponents = messageComponents
@@ -37,7 +37,7 @@ public final class MessageMessageComponentComponent implements IMessageComponent
   }
 
   @AssistedInject
-  public MessageMessageComponentComponent(final @Assisted @NonNull IMessageComponent @NonNull [] messageComponents,
+  MessageMessageComponentComponent(final @Assisted @NonNull IMessageComponent @NonNull [] messageComponents,
       final @NonNull IBanExceptionalFutureLoggerFactory banExceptionalFutureLoggerFactory) {
     this(CompletableFuture.completedFuture(messageComponents), banExceptionalFutureLoggerFactory);
   }

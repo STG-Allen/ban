@@ -20,7 +20,6 @@ package com.proximyst.ban.commands;
 
 import cloud.commandframework.CommandManager;
 import cloud.commandframework.context.CommandContext;
-import com.google.inject.Inject;
 import com.proximyst.ban.BanPermissions;
 import com.proximyst.ban.commands.cloud.BaseCommand;
 import com.proximyst.ban.factory.IBanExceptionalFutureLoggerFactory;
@@ -34,6 +33,7 @@ import com.proximyst.ban.utils.BanExceptionalFutureLogger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import javax.inject.Inject;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;

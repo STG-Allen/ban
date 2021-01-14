@@ -22,16 +22,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.proximyst.ban.factory.IBanExceptionalFutureLoggerFactory;
 import com.proximyst.ban.inject.annotation.BanAsyncExecutor;
-import com.proximyst.ban.model.UsernameHistory.Entry;
 import com.proximyst.ban.rest.IAshconMojangApi.AshconUser;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
@@ -62,7 +60,6 @@ public final class TestSetup {
       final AshconUser ashconUser = new AshconUser();
       ashconUser.uuid = USER_UUID;
       ashconUser.username = USER_NAME;
-      ashconUser.history = List.of(new Entry(ORIGINAL_NAME, null));
       return ashconUser;
     }
 
@@ -72,7 +69,6 @@ public final class TestSetup {
       final AshconUser ashconUser = new AshconUser();
       ashconUser.uuid = UUID.randomUUID();
       ashconUser.username = RandomStringUtils.randomAlphabetic(6, 12);
-      ashconUser.history = List.of(new Entry(RandomStringUtils.randomAlphabetic(7, 14), null));
       return ashconUser;
     }
 

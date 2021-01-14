@@ -18,25 +18,20 @@
 
 package com.proximyst.ban.service.impl;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.proximyst.ban.inject.annotation.BanAsyncExecutor;
+import com.proximyst.ban.model.BanIdentity;
 import com.proximyst.ban.model.Punishment;
+import com.proximyst.ban.model.PunishmentBuilder;
 import com.proximyst.ban.platform.IBanAudience;
-import com.proximyst.ban.platform.IBanServer;
 import com.proximyst.ban.service.IDataService;
 import com.proximyst.ban.service.IPunishmentService;
 import com.proximyst.ban.service.MessageService;
-import com.proximyst.ban.utils.ThrowableUtils;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import net.kyori.adventure.identity.Identity;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -49,58 +44,27 @@ public final class ImplPunishmentService implements IPunishmentService {
   private final @NonNull IDataService dataService;
   private final @NonNull MessageService messageService;
   private final @NonNull Executor executor;
-  private final @NonNull IBanServer banServer;
-
-  private final @NonNull Cache<@NonNull UUID, @NonNull List<@NonNull Punishment>> punishmentCache =
-      CacheBuilder.newBuilder()
-          .initialCapacity(512)
-          .maximumSize(MAXIMUM_PUNISHMENT_CACHE_CAPACITY)
-          .expireAfterAccess(5, TimeUnit.MINUTES)
-          .build();
 
   @Inject
   ImplPunishmentService(final @NonNull IDataService dataService,
       final @NonNull MessageService messageService,
-      final @NonNull @BanAsyncExecutor Executor executor,
-      final @NonNull IBanServer banServer) {
+      final @NonNull @BanAsyncExecutor Executor executor) {
     this.dataService = dataService;
     this.messageService = messageService;
     this.executor = executor;
-    this.banServer = banServer;
   }
 
   @Override
   public @NonNull CompletableFuture<@NonNull ImmutableList<@NonNull Punishment>> getPunishments(
-      final @NonNull UUID target) {
-    final List<Punishment> existingPunishments = this.punishmentCache.getIfPresent(target);
-    if (existingPunishments != null) {
-      return CompletableFuture.completedFuture(ImmutableList.copyOf(existingPunishments));
-    }
-
-    // Okay, we've got to load them and cache them thereafter.
-    return ThrowableUtils.supplyAsyncSneaky(() -> ImmutableList.copyOf(this.punishmentCache
-            .get(target, () -> this.dataService.getPunishmentsForTarget(target))),
-        this.executor);
+      final @NonNull BanIdentity identity) {
+    return CompletableFuture.supplyAsync(() -> ImmutableList.copyOf(
+        this.dataService.getPunishmentsForTarget(identity)), this.executor);
   }
 
   @Override
-  public @NonNull CompletableFuture<@Nullable Void> savePunishment(final @NonNull Punishment punishment) {
-    return this.getPunishments(punishment.getTarget()) // Ensure we have their punishments loaded
-        .thenComposeAsync($ -> {
-          this.punishmentCache.asMap().compute(punishment.getTarget(), (uuid, list) -> {
-            if (list == null) {
-              return Lists.newArrayList(punishment);
-            }
-
-            if (!list.contains(punishment)) { // Referential comparison
-              list.add(punishment);
-            }
-            return list;
-          });
-
-          this.dataService.savePunishment(punishment);
-          return CompletableFuture.completedFuture(null);
-        }, this.executor);
+  public @NonNull CompletableFuture<@NonNull Punishment> savePunishment(
+      final @NonNull PunishmentBuilder punishmentBuilder) {
+    return CompletableFuture.supplyAsync(() -> this.dataService.savePunishment(punishmentBuilder), this.executor);
   }
 
   @Override
@@ -109,15 +73,17 @@ public final class ImplPunishmentService implements IPunishmentService {
       return CompletableFuture.completedFuture(null);
     }
 
-    final IBanAudience target = this.banServer
-        .audienceOf(punishment.getTarget());
-    if (target == null) {
-      // We have no-one to apply the punishment on.
-      return CompletableFuture.completedFuture(null);
-    }
+    return punishment.getTarget().audiences()
+        .thenAccept(audiences -> CompletableFuture.allOf(
+            StreamSupport.stream(audiences.spliterator(), false)
+                .map(audience -> this.applyPunishmentTo(punishment, audience))
+                .toArray(CompletableFuture<?>[]::new)));
+  }
 
+  private @NonNull CompletableFuture<@Nullable Void> applyPunishmentTo(final @NonNull Punishment punishment,
+      final @NonNull IBanAudience audience) {
     final String bypassPermission = punishment.getPunishmentType().getBypassPermission().orElse(null);
-    if (bypassPermission != null && target.hasPermission(bypassPermission)) {
+    if (bypassPermission != null && audience.hasPermission(bypassPermission)) {
       // Don't apply the punishment; they can bypass it.
       return CompletableFuture.completedFuture(null);
     }
@@ -134,13 +100,13 @@ public final class ImplPunishmentService implements IPunishmentService {
             case BAN:
               // Fall through.
             case KICK:
-              target.disconnect(component);
+              audience.disconnect(component);
               break;
 
             case MUTE:
               // Fall through.
             default:
-              target.sendMessage(Identity.nil(), component);
+              audience.sendMessage(Identity.nil(), component);
               break;
           }
         });

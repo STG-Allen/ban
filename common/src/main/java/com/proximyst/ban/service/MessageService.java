@@ -18,8 +18,6 @@
 
 package com.proximyst.ban.service;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.proximyst.ban.config.MessageKey;
 import com.proximyst.ban.config.MessagesConfig;
 import com.proximyst.ban.factory.IBanExceptionalFutureLoggerFactory;
@@ -33,6 +31,8 @@ import com.proximyst.ban.platform.IBanServer;
 import com.proximyst.ban.utils.BanExceptionalFutureLogger;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.CompletableFuture;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;

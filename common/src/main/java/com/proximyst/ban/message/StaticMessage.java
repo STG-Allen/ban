@@ -18,11 +18,11 @@
 
 package com.proximyst.ban.message;
 
-import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.proximyst.ban.config.MessageKey;
 import com.proximyst.ban.config.MessagesConfig;
 import java.util.concurrent.CompletableFuture;
+import javax.inject.Inject;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
@@ -35,7 +35,7 @@ public final class StaticMessage implements IMessage {
   private final @NonNull MessagesConfig messagesConfig;
 
   @Inject
-  public StaticMessage(final @Assisted @NonNull MessageKey messageKey,
+  StaticMessage(final @Assisted @NonNull MessageKey messageKey,
       final @NonNull MessagesConfig messagesConfig) {
     this.messageKey = messageKey;
     this.messagesConfig = messagesConfig;
