@@ -19,7 +19,9 @@
 package com.proximyst.ban.event.subscriber;
 
 import com.proximyst.ban.BanPermissions;
+import com.proximyst.ban.model.BanIdentity;
 import com.proximyst.ban.service.IPunishmentService;
+import com.proximyst.ban.service.IUserService;
 import com.proximyst.ban.service.MessageService;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
@@ -29,12 +31,15 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class MutedPlayerChatSubscriber {
   private final @NonNull IPunishmentService punishmentService;
+  private final @NonNull IUserService userService;
   private final @NonNull MessageService messageService;
 
   @Inject
   MutedPlayerChatSubscriber(final @NonNull IPunishmentService punishmentService,
+      final @NonNull IUserService userService,
       final @NonNull MessageService messageService) {
     this.punishmentService = punishmentService;
+    this.userService = userService;
     this.messageService = messageService;
   }
 
@@ -45,7 +50,10 @@ public class MutedPlayerChatSubscriber {
       return;
     }
 
-    this.punishmentService.getActiveMute(event.getPlayer().getUniqueId())
+    final BanIdentity identity = this.userService.getUser(event.getPlayer().getUniqueId())
+        .join() // They're currently online, so this'll be completed instantly.
+        .orElseThrow(() -> new IllegalStateException("online players must have identities"));
+    this.punishmentService.getActiveMute(identity)
         .join() // This *should* be fast, and only on one player's connection thread
         .ifPresent(mute -> {
           event.setResult(ChatResult.denied());

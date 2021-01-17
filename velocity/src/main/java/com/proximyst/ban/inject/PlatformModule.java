@@ -23,9 +23,11 @@ import com.google.inject.Provides;
 import com.proximyst.ban.BanPlugin;
 import com.proximyst.ban.inject.annotation.BanAsyncExecutor;
 import com.proximyst.ban.inject.annotation.PluginData;
+import com.proximyst.ban.platform.IBanAudience.IBanConsole;
 import com.proximyst.ban.platform.IBanPlugin;
 import com.proximyst.ban.platform.IBanServer;
 import com.proximyst.ban.platform.VelocityBanSchedulerExecutor;
+import com.proximyst.ban.platform.VelocityConsoleAudience;
 import com.proximyst.ban.platform.VelocityServer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import java.io.File;
@@ -66,5 +68,11 @@ public class PlatformModule extends AbstractModule {
     final File file = dataDirectory.toFile();
     file.mkdirs();
     return file;
+  }
+
+  @Singleton
+  @Provides
+  @NonNull IBanConsole banConsole(final @NonNull VelocityConsoleAudience velocityConsoleAudience) {
+    return velocityConsoleAudience;
   }
 }

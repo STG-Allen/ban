@@ -18,13 +18,17 @@
 
 package com.proximyst.ban.service.impl;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.proximyst.ban.inject.annotation.BanAsyncExecutor;
 import com.proximyst.ban.model.BanIdentity;
-import com.proximyst.ban.model.BanIdentity.ConsoleIdentity;
 import com.proximyst.ban.model.BanIdentity.UuidIdentity;
+import com.proximyst.ban.platform.IBanServer;
 import com.proximyst.ban.service.IDataService;
 import com.proximyst.ban.service.IMojangService;
 import com.proximyst.ban.service.IUserService;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -40,17 +44,23 @@ public final class ImplUserService implements IUserService {
   private final @NonNull IMojangService mojangService;
   private final @NonNull IDataService dataService;
   private final @NonNull Executor executor;
-  private final @NonNull ConsoleIdentity banConsole;
+  private final @NonNull IBanServer banServer;
+
+  private final @NonNull Map<@NonNull UUID, @NonNull UuidIdentity> uuidIdentityCache = new HashMap<>(512);
+  private final @NonNull Cache<@NonNull String, @NonNull UUID> usernameUuidCache = CacheBuilder.newBuilder()
+      .expireAfterWrite(5, TimeUnit.MINUTES)
+      .maximumSize(512)
+      .build();
 
   @Inject
   ImplUserService(final @NonNull IMojangService mojangService,
       final @NonNull IDataService dataService,
       final @NonNull @BanAsyncExecutor Executor executor,
-      final @NonNull ConsoleIdentity banConsole) {
+      final @NonNull IBanServer banServer) {
     this.mojangService = mojangService;
     this.dataService = dataService;
     this.executor = executor;
-    this.banConsole = banConsole;
+    this.banServer = banServer;
   }
 
   @Override
@@ -59,12 +69,22 @@ public final class ImplUserService implements IUserService {
       return CompletableFuture.completedFuture(Optional.empty());
     }
 
+    final UuidIdentity cachedIdentity = this.uuidIdentityCache.get(uuid);
+    if (cachedIdentity != null) {
+      return CompletableFuture.completedFuture(Optional.of(cachedIdentity));
+    }
+
     return this.getUserInternal(() -> this.dataService.getUser(uuid).flatMap(BanIdentity::asUuidIdentity),
         () -> this.mojangService.getUser(uuid));
   }
 
   @Override
   public @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUser(final @NonNull String name) {
+    final UUID cachedUuid = this.usernameUuidCache.getIfPresent(name);
+    if (cachedUuid != null) {
+      return this.getUser(cachedUuid);
+    }
+
     return this.getUserInternal(() -> this.dataService.getUser(name).flatMap(BanIdentity::asUuidIdentity),
         () -> this.mojangService.getUser(name));
   }
@@ -95,6 +115,11 @@ public final class ImplUserService implements IUserService {
     return CompletableFuture.supplyAsync(() -> this.dataService.createIdentity(uuid, username), this.executor);
   }
 
+  @Override
+  public void uncachePlayer(@NonNull UUID uuid) {
+    this.uuidIdentityCache.remove(uuid);
+  }
+
   private @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUserInternal(
       final @NonNull Supplier<@NonNull Optional<@NonNull UuidIdentity>> banUserSupplier,
       final @NonNull Supplier<@NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>>> mojangUserSupplier) {
@@ -107,9 +132,15 @@ public final class ImplUserService implements IUserService {
 
           return mojangUserSupplier.get()
               .thenApply(mojangUser -> {
-                mojangUser.ifPresent(ident ->
-                    this.executor.execute(() ->
-                        this.dataService.createIdentity(ident.uuid(), ident.username())));
+                mojangUser.ifPresent(ident -> {
+                  this.executor.execute(() ->
+                      this.dataService.createIdentity(ident.uuid(), ident.username()));
+                  this.usernameUuidCache.put(ident.username(), ident.uuid());
+
+                  if (this.banServer.audienceOf(ident.uuid()) != null) {
+                    this.uuidIdentityCache.put(ident.uuid(), ident);
+                  }
+                });
 
                 return mojangUser;
               });

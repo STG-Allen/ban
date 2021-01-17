@@ -65,4 +65,11 @@ public interface IUserService {
    * @return The user data of the user.
    */
   @NonNull CompletableFuture<@NonNull Optional<@NonNull UuidIdentity>> getUserUpdated(final @NonNull UUID uuid);
+
+  /**
+   * Remove the player from the caches, if they were there.
+   *
+   * @param uuid The UUID of the player to remove.
+   */
+  void uncachePlayer(final @NonNull UUID uuid);
 }

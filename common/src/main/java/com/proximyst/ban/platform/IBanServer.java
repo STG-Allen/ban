@@ -18,6 +18,7 @@
 
 package com.proximyst.ban.platform;
 
+import com.proximyst.ban.platform.IBanAudience.IBanConsole;
 import com.proximyst.ban.platform.IBanAudience.IBanPlayer;
 import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
@@ -32,15 +33,15 @@ import org.checkerframework.dataflow.qual.Pure;
  */
 public interface IBanServer extends Audience {
   /**
-   * @return All online {@link IBanAudience}s. This does not include the console.
+   * @return All online {@link IBanPlayer}s.
    */
-  @NonNull Iterable<? extends IBanAudience> onlineAudiences();
+  @NonNull Iterable<? extends IBanPlayer> onlineAudiences();
 
   /**
    * @return The console audience. There will only ever be one console.
    */
   @Pure
-  @NonNull IBanAudience consoleAudience();
+  @NonNull IBanConsole consoleAudience();
 
   /**
    * @return The amount of audiences there are online.

@@ -19,7 +19,9 @@
 package com.proximyst.ban.event.subscriber;
 
 import com.proximyst.ban.BanPermissions;
+import com.proximyst.ban.model.BanIdentity;
 import com.proximyst.ban.service.IPunishmentService;
+import com.proximyst.ban.service.IUserService;
 import com.proximyst.ban.service.MessageService;
 import com.velocitypowered.api.event.ResultedEvent.ComponentResult;
 import com.velocitypowered.api.event.Subscribe;
@@ -29,12 +31,15 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class BannedPlayerJoinSubscriber {
   private final @NonNull IPunishmentService punishmentService;
+  private final @NonNull IUserService userService;
   private final @NonNull MessageService messageService;
 
   @Inject
   BannedPlayerJoinSubscriber(final @NonNull IPunishmentService punishmentService,
+      final @NonNull IUserService userService,
       final @NonNull MessageService messageService) {
     this.punishmentService = punishmentService;
+    this.userService = userService;
     this.messageService = messageService;
   }
 
@@ -45,7 +50,10 @@ public class BannedPlayerJoinSubscriber {
       return;
     }
 
-    this.punishmentService.getActiveBan(event.getPlayer().getUniqueId())
+    final BanIdentity identity = this.userService.getUser(event.getPlayer().getUniqueId())
+        .join() // They're currently online, so this should be completed instantly.
+        .orElseThrow(() -> new IllegalStateException("online players must have identities"));
+    this.punishmentService.getActiveBan(identity)
         .join() // This *should* be fast, and only on one player's connection thread
         .ifPresent(ban ->
             event.setResult(ComponentResult.denied(
